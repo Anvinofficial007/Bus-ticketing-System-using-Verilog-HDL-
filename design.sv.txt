@@ -1,0 +1,44 @@
+module BusTicketingSystem(
+    input seat_request,               // signal for seat booking request
+    input [3:0] boarding_point,       // 4-bit input for boarding point (max 15 stops)
+    input [3:0] exit_point,           // 4-bit input for exit point (max 15 stops)
+
+    output reg [7:0] fare,            // 8-bit fare output
+    output reg seat_available         // Indicates if a seat is available
+);
+
+parameter SEAT_CAPACITY = 6;      // Total number of seats
+parameter FARE_RATE = 10;         // Fare per stop (10 currency units per stop)
+
+reg [4:0] booked_seats;           // Tracks the number of booked seats (max 31)
+
+initial begin
+    fare = 0;
+    booked_seats = 0;
+    seat_available = 6;
+end
+
+always @(*)
+begin
+    if (exit_point > boarding_point)
+    begin
+        fare = (exit_point - boarding_point) * FARE_RATE;
+    end
+    else
+    begin
+        fare = 0; // No fare for invalid boarding/exit combination
+    end
+end
+
+always @(posedge seat_request)
+begin
+    if (booked_seats < SEAT_CAPACITY) begin
+        booked_seats = booked_seats + 1;
+        // The seat_available output tracks if a SEAT IS STILL AVAILABLE *after* this booking.
+        seat_available = (booked_seats < SEAT_CAPACITY);
+    end
+    else begin
+        seat_available = 0; // No seats available
+    end
+end
+endmodule

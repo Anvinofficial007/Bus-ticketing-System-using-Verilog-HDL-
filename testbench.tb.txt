@@ -1,0 +1,77 @@
+module tb_bus_ticketing_system;
+    // Testbench signals
+    reg seat_request = 0; // Signal for booking
+    reg [3:0] boarding;    // Boarding input
+    reg [3:0] exit;        // Exit input
+    wire [7:0] fare;       // Calculated fare
+    wire seat_available;   // Indicates if a seat is available
+
+    // Instantiate the BusTicketingSystem module (Corrected name and ports)
+    BusTicketingSystem uut (
+        .seat_request(seat_request),
+        .boarding_point(boarding),
+        .exit_point(exit),
+        .fare(fare),
+        .seat_available(seat_available)
+    );
+
+    initial begin
+        // Setup for VCD dump to view waveform in EPWave
+        $dumpfile("dump.vcd");
+        $dumpvars(0, tb_bus_ticketing_system);
+
+        // --- FARE TEST CASES (seat_request is held low for now) ---
+        seat_request = 0;
+
+        // Test case 1: Boarding at Location 2, Exit at Location 5 (Expected Fare: 30)
+        boarding = 4'b0010; // Boarding point 2
+        exit = 4'b0101;     // Exit point 5
+        #10;                // Wait for 10 time units
+        $display("Test Case 1: Boarding: %d, Exit: %d, Fare: %d, Seat Available: %d", boarding, exit, fare, seat_available);
+
+        // Test case 2: Boarding at location 1, Exit at Location 6 (Expected Fare: 50)
+        boarding = 4'b0001; // Boarding point 1
+        exit = 4'b0110;     // Exit point 6
+        #10;
+        $display("Test Case 2: Boarding: %d, Exit: %d, Fare: %d, Seat Available: %d", boarding, exit, fare, seat_available);
+
+        // Test case 3: Boarding and Exit at the same point (invalid case) (Expected Fare: 0)
+        boarding = 4'b0100; // Boarding point 4
+        exit = 4'b0100;     // Exit point 4
+        #10;
+        $display("Test Case 3: Boarding: %d, Exit: %d, Fare: %d, Seat Available: %d", boarding, exit, fare, seat_available);
+
+        // Test case 4: Boarding at a higher point than Exit (invalid case) (Expected Fare: 0)
+        boarding = 4'b0111; // Boarding point 7
+        exit = 4'b0101;     // Exit point 5
+        #10;
+        $display("Test Case 4: Boarding: %d, Exit: %d, Fare: %d, Seat Available: %d", boarding, exit, fare, seat_available);
+
+        // Test case 5: Max possible values (Boarding at 0, Exit at 15) (Expected Fare: 150)
+        boarding = 4'b0000; // Boarding point 0
+        exit = 4'b1111;     // Exit point 15
+        #10;
+        $display("Test Case 5: Boarding: %d, Exit: %d, Fare: %d, Seat Available: %d", boarding, exit, fare, seat_available);
+
+        // --- BOOKING TEST CASES (fare calculation is secondary) ---
+
+        // Test case 6: Attempt 6 bookings (SEAT_CAPACITY = 6)
+        $display("\n--- Booking Tests (SEAT_CAPACITY = 6) ---");
+        repeat (6) begin
+            seat_request = 1; // Assert booking request
+            #5;
+            $display("Booking: %d | Available: %d", $time/10, seat_available);
+            seat_request = 0; // Deassert booking request
+            #5;
+        end
+
+        // Test case 7: Attempt a 7th booking (Should fail)
+        seat_request = 1;
+        #5;
+        $display("Booking: 7 | Available: %d (Expected 0)", seat_available);
+        seat_request = 0;
+        #5;
+
+        $finish;
+    end
+endmodule
